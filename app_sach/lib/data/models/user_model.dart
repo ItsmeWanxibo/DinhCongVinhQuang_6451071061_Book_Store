@@ -4,6 +4,8 @@ class UserModel {
   final String email;
   final String phone;
   final String avatar;
+  final String gender;
+  final String birthDate;
   final DateTime createdAt;
 
   UserModel({
@@ -12,6 +14,8 @@ class UserModel {
     required this.email,
     this.phone = '',
     this.avatar = '',
+    this.gender = '',
+    this.birthDate = '',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -21,6 +25,8 @@ class UserModel {
     email: map['email'] ?? '',
     phone: map['phone'] ?? '',
     avatar: map['avatar'] ?? '',
+    gender: map['gender'] ?? '',
+    birthDate: map['birthDate'] ?? '',
     createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
   );
 
@@ -30,6 +36,8 @@ class UserModel {
     'email': email,
     'phone': phone,
     'avatar': avatar,
+    'gender': gender,
+    'birthDate': birthDate,
     'createdAt': createdAt,
   };
 
@@ -37,6 +45,8 @@ class UserModel {
     String? fullName,
     String? phone,
     String? avatar,
+    String? gender,
+    String? birthDate,
   }) =>
       UserModel(
         uid: uid,
@@ -44,6 +54,8 @@ class UserModel {
         email: email,
         phone: phone ?? this.phone,
         avatar: avatar ?? this.avatar,
+        gender: gender ?? this.gender,
+        birthDate: birthDate ?? this.birthDate,
         createdAt: createdAt,
       );
 }

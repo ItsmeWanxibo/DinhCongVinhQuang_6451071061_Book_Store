@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../data/models/order_model.dart';
-import '../data/models/cart_item_model.dart';
 import '../data/services/order_service.dart';
 import '../data/services/address_service.dart';
 import 'auth_controller.dart';
@@ -16,35 +15,65 @@ class OrderController extends GetxController {
   final RxList<OrderModel> orders = <OrderModel>[].obs;
   final RxList<AddressModel> addresses = <AddressModel>[].obs;
   final Rx<AddressModel?> selectedAddress = Rx<AddressModel?>(null);
-  final Rx<OrderModel?> selectedOrder = Rx<OrderModel?>(null);
   final RxString paymentMethod = 'COD'.obs;
   final RxBool isLoading = false.obs;
+  final RxBool isLoadingOrders = false.obs;
 
   String? get uid => _authCtrl.currentUser.value?.uid;
 
   Future<void> loadOrders() async {
-    if (uid == null) return;
-    isLoading.value = true;
-    orders.value = await _orderService.getUserOrders(uid!);
-    isLoading.value = false;
+    if (uid == null) {
+      orders.clear();
+      return;
+    }
+    try {
+      isLoadingOrders.value = true;
+      final result = await _orderService.getUserOrders(uid!);
+      orders.assignAll(result);
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Không thể tải đơn hàng: $e',
+          snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoadingOrders.value = false;
+    }
   }
 
   Future<void> loadAddresses() async {
     if (uid == null) return;
-    addresses.value = await _addressService.getAddresses(uid!);
-    if (addresses.isNotEmpty) selectedAddress.value = addresses.first;
+    try {
+      final result = await _addressService.getAddresses(uid!);
+      addresses.assignAll(result);
+      if (result.isNotEmpty && selectedAddress.value == null) {
+        selectedAddress.value = result.first;
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   Future<void> addAddress(AddressModel address) async {
     if (uid == null) return;
     await _addressService.addAddress(uid!, address);
     await loadAddresses();
+    Get.snackbar('Thành công', 'Đã thêm địa chỉ',
+        snackPosition: SnackPosition.BOTTOM);
+  }
+
+  Future<void> deleteAddress(String addressId) async {
+    if (uid == null) return;
+    await _addressService.deleteAddress(uid!, addressId);
+    await loadAddresses();
   }
 
   Future<void> placeOrder() async {
-    if (uid == null || selectedAddress.value == null) return;
+    if (uid == null || selectedAddress.value == null) {
+      Get.snackbar('Lỗi', 'Vui lòng chọn địa chỉ giao hàng',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
     if (_cartCtrl.items.isEmpty) {
-      Get.snackbar('Lỗi', 'Giỏ hàng trống');
+      Get.snackbar('Lỗi', 'Giỏ hàng trống',
+          snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
@@ -61,11 +90,17 @@ class OrderController extends GetxController {
       final orderId = await _orderService.createOrder(order);
       await _cartCtrl.clearCart();
 
+      // Load lại danh sách đơn hàng
+      await loadOrders();
+
       Get.offAllNamed(AppRoutes.orderDetail, arguments: orderId);
-      Get.snackbar('Đặt hàng thành công', 'Đơn hàng của bạn đã được xác nhận!',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Đặt hàng thành công!',
+        'Đơn hàng của bạn đã được xác nhận.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Lỗi', e.toString(),
+      Get.snackbar('Lỗi', 'Không thể đặt hàng: $e',
           snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
@@ -73,9 +108,18 @@ class OrderController extends GetxController {
   }
 
   Future<void> cancelOrder(String orderId) async {
-    await _orderService.cancelOrder(orderId);
-    await loadOrders();
-    Get.snackbar('Đã hủy', 'Đơn hàng đã được hủy',
-        snackPosition: SnackPosition.BOTTOM);
+    try {
+      isLoading.value = true;
+      await _orderService.updateStatus(orderId, 'cancelled');
+      await loadOrders();
+      Get.back();
+      Get.snackbar('Đã hủy', 'Đơn hàng đã được hủy thành công',
+          snackPosition: SnackPosition.BOTTOM);
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Không thể hủy đơn: $e',
+          snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

@@ -59,6 +59,7 @@ class OrderModel {
 }
 
 class AddressModel {
+  final String? id;      // ← thêm id
   final String fullName;
   final String phone;
   final String address;
@@ -67,6 +68,7 @@ class AddressModel {
   final bool isDefault;
 
   AddressModel({
+    this.id,
     required this.fullName,
     required this.phone,
     required this.address,
@@ -75,14 +77,16 @@ class AddressModel {
     this.isDefault = false,
   });
 
-  factory AddressModel.fromMap(Map<String, dynamic> map) => AddressModel(
-    fullName: map['fullName'] ?? '',
-    phone: map['phone'] ?? '',
-    address: map['address'] ?? '',
-    district: map['district'] ?? '',
-    city: map['city'] ?? '',
-    isDefault: map['isDefault'] ?? false,
-  );
+  factory AddressModel.fromMap(Map<String, dynamic> map, {String? id}) =>
+      AddressModel(
+        id: id ?? map['id'],
+        fullName: map['fullName'] ?? '',
+        phone: map['phone'] ?? '',
+        address: map['address'] ?? '',
+        district: map['district'] ?? '',
+        city: map['city'] ?? '',
+        isDefault: map['isDefault'] ?? false,
+      );
 
   Map<String, dynamic> toMap() => {
     'fullName': fullName,

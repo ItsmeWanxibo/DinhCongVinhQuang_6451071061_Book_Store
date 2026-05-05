@@ -10,7 +10,10 @@ class AddressService {
   Future<List<AddressModel>> getAddresses(String uid) async {
     final snap = await _addrRef(uid).get();
     return snap.docs
-        .map((d) => AddressModel.fromMap(d.data() as Map<String, dynamic>))
+        .map((d) => AddressModel.fromMap(
+      d.data() as Map<String, dynamic>,
+      id: d.id,   // ← truyền id
+    ))
         .toList();
   }
 
@@ -26,6 +29,9 @@ class AddressService {
         .limit(1)
         .get();
     if (snap.docs.isEmpty) return null;
-    return AddressModel.fromMap(snap.docs.first.data() as Map<String, dynamic>);
+    return AddressModel.fromMap(
+      snap.docs.first.data() as Map<String, dynamic>,
+      id: snap.docs.first.id,
+    );
   }
 }
